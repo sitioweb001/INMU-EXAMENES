@@ -1,0 +1,10 @@
+Este archivo (CODIGO_GS.js) es el backend ANTERIOR del sistema de exámenes,
+escrito en Google Apps Script. YA NO SE USA.
+
+A partir de esta versión, todo el sistema de exámenes funciona 100% con
+Firebase (Firestore + Authentication), igual que Asistencia y el Portal del
+Estudiante. La lógica completa que tenía este archivo fue trasladada a
+firebase-examenes.js.
+
+Puedes conservarlo como referencia histórica o borrarlo. Ya no hace falta
+desplegarlo en Google Apps Script ni pegar ninguna URL de /exec en el HTML.

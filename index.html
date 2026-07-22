@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INMU - Plataforma de Exámenes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --primary: #2563eb; --primary-hover: #1d4ed8; --secondary: #f3f4f6; --text-main: #1f2937; --text-light: #6b7280; --danger: #ef4444; --success: #10b981; --border: #e5e7eb; --bg: #f8fafc; --card-bg: #ffffff; --radius: 12px; --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: var(--bg); color: var(--text-main); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+
+    .logos-wrapper { display: flex; flex-direction: column; align-items: center; margin-bottom: 25px; }
+    .logo-edu { width: 200px; margin-bottom: -20px; z-index: 2; position: relative; cursor: pointer; transition: transform 0.2s; }
+    .logo-edu:hover { transform: scale(1.05); }
+    .logo-main { width: 130px; z-index: 1; position: relative; border-radius: 50%; }
+    .logo-corner { position: fixed; top: 15px; right: 20px; width: 100px; display: none; z-index: 1000; cursor: pointer; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.15)); }
+
+    .view-section { display: none; width: 100%; max-width: 800px; padding: 20px; animation: fadeIn 0.4s ease; }
+    #view-docente.view-section { max-width: 1150px; }
+    .view-section.active { display: block; }
+    .card { background: var(--card-bg); border-radius: var(--radius); padding: 30px; box-shadow: var(--shadow); width: 100%; position: relative; overflow: hidden; }
+    /* ===== Marca de agua institucional — igual que el Portal del Estudiante ===== */
+    .card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url('marca de agua.svg');
+      background-size: 60%;
+      background-repeat: no-repeat;
+      background-position: center;
+      opacity: .10;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .card > * { position: relative; z-index: 1; }
+    .login-card { max-width: 420px; margin: 30px auto; }
+    h1, h2, h3, h4 { color: var(--text-main); margin-bottom: 15px; font-weight: 700; }
+    p { color: var(--text-light); margin-bottom: 20px; line-height: 1.5; }
+    .hint-text { font-size: 12px; color: var(--text-light); margin-top: -10px; margin-bottom: 15px; }
+
+    .tabs { display: flex; gap: 5px; margin-bottom: 20px; background: var(--secondary); padding: 5px; border-radius: 8px; flex-wrap: wrap;}
+    .tab-btn { flex: 1; min-width: 120px; padding: 10px; border: none; background: transparent; color: var(--text-light); font-weight: 600; border-radius: 6px; cursor: pointer; }
+    .tab-btn.active { background: var(--card-bg); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .btn { display: inline-block; width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; text-align: center; margin-bottom: 10px; }
+    .btn:hover { background: var(--primary-hover); }
+    .btn-secondary { background: var(--secondary); color: var(--text-main); }
+    .btn-danger { background: var(--danger); }
+    .btn-dark { background: #111827; }
+    .btn-small { width: auto; padding: 8px 15px; font-size: 14px; margin-bottom: 0;}
+
+    .form-group { margin-bottom: 15px; text-align: left; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
+    .form-control { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; outline: none; font-family: 'Inter', sans-serif; }
+    .alert { padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; font-weight: 600; display: none; }
+    .alert-danger { background: #fee2e2; color: var(--danger); }
+    .alert-success { background: #d1fae5; color: var(--success); }
+    .alert-warning { background: #fef3c7; color: #d97706; display: block;}
+
+    .question-box { background: var(--secondary); padding: 15px; border-radius: 8px; margin-bottom: 15px; position: relative; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border); }
+    th { background: var(--secondary); font-weight: 600; }
+    tr:hover { background: #f9fafb; }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 2000; backdrop-filter: blur(4px); }
+    .modal-content { background: white; padding: 30px; border-radius: var(--radius); width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; }
+    .modal-close { float: right; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-light); }
+    .result-item { padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid var(--border); background: var(--secondary); }
+    .result-item.correcto { border-color: var(--success); }
+    .result-item.incorrecto { border-color: var(--danger); }
+    #system-down-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
+    #system-down-overlay h1 { color: var(--danger); font-size: 3rem; margin-bottom: 10px; }
+
+    /* ===== Panel Docente: layout con sidebar ===== */
+    .docente-layout { display: flex; gap: 20px; align-items: flex-start; }
+    .docente-sidebar { width: 230px; flex-shrink: 0; background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 10px; position: sticky; top: 20px; display: flex; flex-direction: column; gap: 3px; }
+    .sidebar-header { padding: 8px 10px 14px 10px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+    .sidebar-header h3 { font-size: 15px; margin-bottom: 0; word-break: break-word; }
+    .side-btn { text-align: left; padding: 11px 12px; border: none; background: transparent; border-radius: 8px; font-weight: 600; font-size: 14px; color: var(--text-light); cursor: pointer; transition: 0.15s; width: 100%; }
+    .side-btn:hover { background: var(--secondary); }
+    .side-btn.active { background: #eff6ff; color: var(--primary); }
+    .side-btn.salir { margin-top: 14px; color: var(--danger); border-top: 1px solid var(--border); padding-top: 14px; border-radius: 0; }
+    .docente-content { flex: 1; min-width: 0; background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 25px; }
+    @media (max-width: 760px) {
+      .docente-layout { flex-direction: column; }
+      .docente-sidebar { width: 100%; position: static; flex-direction: row; overflow-x: auto; }
+      .side-btn { white-space: nowrap; }
+      .side-btn.salir { margin-top: 0; border-top: none; border-left: 1px solid var(--border); }
+    }
+
+    /* ===== Chips de materia (coloreados) ===== */
+    .chip-materia { border: 2px solid var(--chip-color, var(--primary)); color: var(--chip-color, var(--primary)); background: #fff; padding: 8px 14px; border-radius: 20px; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.15s; }
+    .chip-materia:hover { filter: brightness(0.97); }
+    .chip-materia.activo { background: var(--chip-color); color: #fff; }
+    .badge-materia { display: inline-block; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 13px; }
+
+    /* ===== Editor de examen estilo "Google Forms" ===== */
+    .gform-card { background: #fff; border: 1px solid var(--border); border-left: 4px solid transparent; border-radius: 10px; padding: 20px; margin-bottom: 16px; transition: 0.15s; }
+    .gform-card:focus-within { border-left-color: var(--primary); box-shadow: var(--shadow); }
+    .gform-card-header { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; align-items: flex-start; }
+    .gform-pregunta-input { font-size: 16px; font-weight: 600; border: none; border-bottom: 2px solid var(--border); padding: 8px 4px; flex: 1; min-width: 200px; background: transparent; outline: none; }
+    .gform-pregunta-input:focus { border-bottom-color: var(--primary); }
+    .gform-tipo-select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-weight: 600; background: #fff; color: var(--text-main); cursor: pointer; }
+    .gform-opcion-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .gform-marker { width: 22px; height: 22px; flex-shrink: 0; border: 2px solid #9ca3af; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.15s; color: transparent; font-size: 13px; font-weight: 700; user-select: none; }
+    .gform-marker:hover { border-color: var(--primary); }
+    .gform-marker.unica { border-radius: 50%; }
+    .gform-marker.multiple { border-radius: 4px; }
+    .gform-marker.correcta { background: var(--success); border-color: var(--success); color: #fff; }
+    .gform-opcion-input { flex: 1; padding: 8px 10px; border: none; border-bottom: 1px solid var(--border); outline: none; background: transparent; font-size: 14px; }
+    .gform-opcion-input:focus { border-bottom-color: var(--primary); }
+    .gform-opcion-del { background: none; border: none; color: var(--text-light); cursor: pointer; font-size: 16px; padding: 4px 8px; }
+    .gform-opcion-del:hover { color: var(--danger); }
+    .gform-add-opcion { background: none; border: none; color: var(--primary); font-weight: 600; cursor: pointer; font-size: 14px; padding: 6px 4px; margin-top: 4px; }
+    .gform-card-footer { display: flex; justify-content: flex-end; gap: 6px; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
+    .icon-btn { background: none; border: none; font-size: 14px; cursor: pointer; color: var(--text-light); padding: 6px 10px; border-radius: 6px; font-weight: 600; }
+    .icon-btn:hover { background: var(--secondary); }
+
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .badge-activo { background: #dbeafe; color: #1d4ed8; }
+    .badge-bloqueado { background: #fee2e2; color: #b91c1c; }
+    .badge-finalizado { background: #d1fae5; color: #047857; }
+
+    /* ===== Teclado matemático flotante ===== */
+    #math-kb-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 1500; width: 54px; height: 54px; border-radius: 50%; background: var(--primary); color: #fff; border: none; font-size: 22px; box-shadow: var(--shadow); cursor: pointer; display: none; }
+    #math-kb-panel { position: fixed; bottom: 85px; right: 20px; z-index: 1500; background: #fff; border-radius: 12px; box-shadow: var(--shadow); padding: 14px; display: none; max-width: 280px; border: 1px solid var(--border); }
+    #math-kb-grid button { padding: 8px; border: 1px solid var(--border); background: var(--secondary); border-radius: 6px; cursor: pointer; font-size: 15px; }
+    #math-kb-grid button:hover { background: #e5e7eb; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body>
+
+  <!-- PANTALLA DE SISTEMA CAÍDO (KILL SWITCH) -->
+  <div id="system-down-overlay">
+    <h1>⚠️ Sistema en Mantenimiento</h1>
+    <p style="font-size: 1.2rem;">El sistema se encuentra temporalmente caído o en mantenimiento.<br>Por favor, comuníquese con el administrador.</p>
+    <button class="btn btn-small btn-secondary" onclick="admin.solicitarClaveAdmin()" style="margin-top:20px;">Acceso Administrador</button>
+  </div>
+
+  <!-- ADVERTENCIA POR CAMBIO DE VENTANA (1ra vez) -->
+  <div id="warning-overlay" class="modal-overlay">
+    <div class="modal-content" style="text-align:center; border-top:6px solid #d97706;">
+      <h2 style="color:#d97706;">⚠️ Advertencia</h2>
+      <p>Detectamos que cambiaste de ventana o pestaña durante el examen. Esto no está permitido.</p>
+      <p style="font-weight:700; color: var(--text-main);">Si vuelve a ocurrir, tu examen será bloqueado automáticamente.</p>
+      <button class="btn" onclick="document.getElementById('warning-overlay').style.display='none'">Entendido, continuar examen</button>
+    </div>
+  </div>
+
+  <!-- BLOQUEO POR CAMBIO DE VENTANA (2da vez) -->
+  <div id="blocked-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index:4000; display:none; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:20px;">
+    <h1 style="color:var(--danger); font-size:2.4rem; margin-bottom:10px;">🚫 Examen Bloqueado</h1>
+    <p style="font-size:1.05rem; max-width:480px;">Tu examen fue bloqueado porque cambiaste de ventana o pestaña más de una vez.</p>
+    <p style="font-size:1.05rem; max-width:480px; font-weight:700;">Pide a tu docente un PIN especial y escríbelo aquí para continuar:</p>
+    <div style="margin-top:15px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center;">
+      <input type="text" id="blocked-pin-input" class="form-control" style="width:180px;" placeholder="PIN especial">
+      <button class="btn btn-small" style="width:auto;" onclick="alumnoApp.antiCheat.reintentarConPin()">Continuar</button>
+    </div>
+    <p id="blocked-error" style="color:var(--danger); font-weight:700; margin-top:10px; display:none;"></p>
+    <button class="btn btn-small btn-secondary" style="margin-top:20px; width:auto; padding:10px 25px;" onclick="ui.logout()">Volver al inicio</button>
+  </div>
+
+  <img src="logo.svg" alt="Logo Edu" class="logo-corner" id="corner-logo" onclick="admin.solicitarClaveAdmin()" title="Panel administrador">
+
+  <!-- TECLADO MATEMÁTICO FLOTANTE -->
+  <button id="math-kb-toggle" onclick="mathKeyboard.toggle()" title="Teclado de símbolos matemáticos">🧮</button>
+  <div id="math-kb-panel">
+    <p style="font-size:12px; margin-bottom:8px; color:var(--text-light);">Toca el campo de texto donde quieres escribir y luego un símbolo:</p>
+    <div id="math-kb-grid" style="display:grid; grid-template-columns:repeat(6,1fr); gap:6px;"></div>
+  </div>
+
+  <!-- VISTA 1: LOGIN -->
+  <div id="view-login" class="view-section active">
+    <div class="card login-card">
+      <div class="logos-wrapper">
+        <img src="logo.svg" alt="Educación" class="logo-edu" onclick="admin.solicitarClaveAdmin()" title="Click para panel admin">
+        <img src="logo2.jpg" alt="INMU" class="logo-main">
+      </div>
+      <h2>Acceso a Plataforma</h2>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="ui.switchLogin('alumno')">Alumnos</button>
+        <button class="tab-btn" onclick="ui.switchLogin('docente')">Docentes</button>
+      </div>
+      <div id="alert-login" class="alert alert-danger"></div>
+
+      <div id="form-alumno">
+        <div class="form-group">
+          <label>Nombre Completo</label>
+          <input type="text" id="al-nombre" class="form-control" placeholder="Ej: JOSE EMERSON CASTRO PEREZ">
+        </div>
+        <p class="hint-text">IMPORTANTE: escribe tu nombre en MAYÚSCULAS y sin tildes, tal como te identifica tu docente.</p>
+        <div class="form-group">
+          <label>NIE <span style="font-weight:400; color:var(--text-light);">(obligatorio — es tu código de estudiante)</span></label>
+          <input type="text" id="al-nie" class="form-control" placeholder="Tu número de identificación estudiantil" required>
+        </div>
+        <p class="hint-text">Tu NIE es necesario para que tu nota se registre automáticamente en tu libreta de calificaciones.</p>
+        <div class="form-group"><label>PIN de Materia</label><input type="password" id="al-pin" class="form-control" placeholder="Ingrese el PIN asignado"></div>
+        <button class="btn" onclick="alumnoApp.login()" id="btn-login-al">Iniciar Examen</button>
+      </div>
+
+      <div id="form-docente" style="display: none;">
+        <div class="form-group"><label>Usuario</label><input type="text" id="doc-nombre" class="form-control" placeholder="Tu usuario"></div>
+        <div class="form-group"><label>Contraseña</label><input type="password" id="doc-pass" class="form-control" placeholder="Contraseña de acceso"></div>
+        <button class="btn" onclick="docenteApp.login()" id="btn-login-doc">Acceder al Panel</button>
+        <button class="btn btn-secondary btn-small" style="width:100%;" onclick="docenteApp.abrirCrearCuenta()">¿No tienes cuenta? Crear cuenta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR CUENTA DE DOCENTE -->
+  <div id="modal-crear-cuenta" class="modal-overlay">
+    <div class="modal-content" style="max-width:380px;">
+      <button class="modal-close" onclick="document.getElementById('modal-crear-cuenta').style.display='none'">&times;</button>
+      <h3>Crear Cuenta de Docente</h3>
+      <div id="alert-crear-cuenta" class="alert alert-danger"></div>
+      <div class="form-group"><label>PIN de Seguridad (proporcionado por el administrador)</label><input type="password" id="cc-clave" class="form-control"></div>
+      <div class="form-group"><label>Usuario (con esto entrarás)</label><input type="text" id="cc-usuario" class="form-control"></div>
+      <div class="form-group"><label>Contraseña</label><input type="password" id="cc-pass" class="form-control"></div>
+      <div class="form-group"><label>Confirmar Contraseña</label><input type="password" id="cc-pass2" class="form-control"></div>
+      <button class="btn" onclick="docenteApp.crearCuenta()">Crear Cuenta</button>
+    </div>
+  </div>
+
+  <!-- VISTA 2: PANEL DEL DOCENTE -->
+  <div id="view-docente" class="view-section">
+    <div class="docente-layout">
+      <div class="docente-sidebar">
+        <div class="sidebar-header"><h3>👨‍🏫 <span id="nombre-docente-side"></span></h3></div>
+        <button class="side-btn active" data-tab="editor" onclick="ui.switchDocenteTab('editor')">📝 Mis Exámenes</button>
+        <button class="side-btn" data-tab="alumnos" onclick="ui.switchDocenteTab('alumnos')">🧑‍🎓 Alumnos</button>
+        <button class="side-btn" data-tab="roster" onclick="ui.switchDocenteTab('roster')">📋 Registro de Alumnos</button>
+        <button class="side-btn" data-tab="accesos" onclick="ui.switchDocenteTab('accesos')">🔑 Accesos Especiales</button>
+        <button class="side-btn" data-tab="resultados" onclick="ui.switchDocenteTab('resultados')">📊 Resultados</button>
+        <button class="side-btn" data-tab="notas" onclick="ui.switchDocenteTab('notas')">📅 Notas por Período</button>
+        <button class="side-btn" data-tab="crear" onclick="ui.switchDocenteTab('crear')">➕ Crear Materia</button>
+        <button class="side-btn" data-tab="config" onclick="ui.switchDocenteTab('config')">⚙️ Configuración</button>
+        <button class="side-btn salir" onclick="ui.logout()">🚪 Cerrar Sesión</button>
+      </div>
+
+      <div class="docente-content">
+        <div id="alert-docente" class="alert"></div>
+
+        <div id="tab-editor">
+          <h3>📝 Mis Exámenes</h3>
+          <div id="materia-chips" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;"></div>
+          <div id="materia-actual-info" style="margin-bottom:14px; display:none; align-items:center; gap:10px;">
+            <span class="badge-materia" id="materia-actual-badge"></span>
+            <button class="btn btn-small" onclick="docenteApp.agregarPregunta()">+ Pregunta</button>
+            <button class="btn btn-small btn-secondary" onclick="docenteApp.editarMateriaActual()">✏️ Editar Grado/Sección/Período</button>
+          </div>
+          <div id="editor-preguntas-container"></div>
+          <button class="btn" style="margin-top: 20px;" onclick="docenteApp.guardarExamen()">💾 Guardar Examen Completo</button>
+        </div>
+
+        <div id="tab-alumnos" style="display:none;">
+          <h3>🧑‍🎓 Alumnos</h3>
+          <p style="margin-bottom:10px;">Lista de alumnos que han ingresado a tus materias. Se actualiza automáticamente cada 2 segundos.</p>
+          <button class="btn btn-secondary btn-small" style="margin-bottom: 15px;" onclick="docenteApp.cargarSesiones()">🔄 Actualizar Lista</button>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead><tr><th>Alumno</th><th>Materia</th><th>Estado</th><th>Advert.</th><th>Acciones</th></tr></thead>
+              <tbody id="tabla-sesiones-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="tab-roster" style="display:none;">
+          <h3>📋 Registro de Alumnos</h3>
+          <p>Lista general de tus alumnos (nombre, NIE, grado y sección). Es un registro de referencia; el acceso al examen sigue siendo por PIN.</p>
+          <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:10px;">
+            <div class="form-group"><label>Nombre Completo</label><input type="text" id="roster-nombre" class="form-control" placeholder="Ej: JOSE PEREZ"></div>
+            <div class="form-group"><label>NIE</label><input type="text" id="roster-nie" class="form-control"></div>
+            <div class="form-group"><label>Grado</label><input type="text" id="roster-grado" class="form-control" placeholder="Ej: 4°"></div>
+            <div class="form-group"><label>Sección</label><input type="text" id="roster-seccion" class="form-control" placeholder="Ej: A"></div>
+          </div>
+          <button class="btn btn-small" style="width:auto; padding:10px 20px;" onclick="docenteApp.agregarRoster()">+ Agregar / Actualizar Alumno</button>
+          <button class="btn btn-small btn-secondary" style="width:auto; padding:10px 20px;" onclick="docenteApp.sincronizarRosterDesdeAsistencia()">🔄 Traer alumnos desde Asistencia (por grado y sección)</button>
+          <div style="overflow-x:auto; margin-top:20px;">
+            <table>
+              <thead><tr><th>Nombre</th><th>NIE</th><th>Grado</th><th>Sección</th><th></th></tr></thead>
+              <tbody id="tabla-roster-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="tab-accesos" style="display:none;">
+          <h3>🔑 Accesos Especiales por NIE</h3>
+          <p>Si un alumno tiene problemas para ingresar (nombre, bloqueo, etc.), créale un acceso alterno: entrará con su <b>NIE</b> y un <b>PIN individual</b> distinto al PIN normal de la materia.</p>
+          <div class="form-group"><label>Materia</label><select id="acceso-materia" class="form-control"></select></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+            <div class="form-group"><label>Nombre del alumno</label><input type="text" id="acceso-nombre" class="form-control"></div>
+            <div class="form-group"><label>NIE</label><input type="text" id="acceso-nie" class="form-control"></div>
+            <div class="form-group"><label>PIN individual</label><input type="text" id="acceso-pin" class="form-control" placeholder="Vacío = autogenerar"></div>
+          </div>
+          <button class="btn btn-small" style="width:auto; padding:10px 20px;" onclick="docenteApp.crearAcceso()">+ Crear Acceso Especial</button>
+          <div style="overflow-x:auto; margin-top:20px;">
+            <table>
+              <thead><tr><th>Nombre</th><th>NIE</th><th>Materia</th><th>PIN</th><th></th></tr></thead>
+              <tbody id="tabla-accesos-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="tab-crear" style="display: none;">
+          <h3>➕ Crear Materia</h3>
+          <div class="form-group"><label>Nombre de la Materia</label><input type="text" id="nueva-mat-nombre" class="form-control" placeholder="Ej: Matemática"></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div class="form-group"><label>Grado</label><input type="text" id="nueva-mat-grado" class="form-control" placeholder="Ej: 4°"></div>
+            <div class="form-group"><label>Sección</label><input type="text" id="nueva-mat-seccion" class="form-control" placeholder="Ej: A"></div>
+          </div>
+          <div class="form-group"><label>Período</label>
+            <select id="nueva-mat-periodo" class="form-control">
+              <option value="1">Período 1</option><option value="2">Período 2</option><option value="3">Período 3</option><option value="4">Período 4</option>
+            </select>
+          </div>
+          <div class="form-group"><label>PIN de Acceso (Para los alumnos)</label><input type="number" id="nueva-mat-pin" class="form-control"></div>
+
+          <div style="margin-top:8px; padding:16px; border:1px dashed var(--border); border-radius:8px; background:var(--secondary);">
+            <p style="font-size:12px; margin-bottom:12px; color:var(--text-main); font-weight:600;">🔗 Sincronización con Asistencia / Notas (opcional pero recomendado)</p>
+            <p class="hint-text" style="margin-top:-6px;">Si el <b>Nombre de la Materia</b>, <b>Grado</b> y <b>Sección</b> de arriba coinciden exactamente con los que el docente usa en el Sistema de Asistencia, la nota del examen se sincronizará sola en la libreta de notas compartida.</p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div class="form-group"><label>Tipo de Materia</label>
+                <select id="nueva-mat-tipo" class="form-control">
+                  <option value="basica">Básica</option>
+                  <option value="modulo">Módulo (Técnico)</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Especialidad (solo si es Módulo)</label><input type="text" id="nueva-mat-especialidad" class="form-control" placeholder="Ej: 1° Adm. Contable"></div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div class="form-group"><label>¿En qué actividad va la nota del examen?</label>
+                <select id="nueva-mat-actividad" class="form-control">
+                  <option value="a3" selected>Examen (a3)</option>
+                  <option value="a2">Integradora / Tarea (a2)</option>
+                  <option value="a1">Cuaderno (a1)</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Escala de calificación</label>
+                <select id="nueva-mat-escala" class="form-control">
+                  <option value="0-10">0 a 10</option>
+                  <option value="0-5">0 a 5 (Módulos)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn" style="margin-top:14px;" onclick="docenteApp.crearMateria()">Crear Materia Nueva</button>
+        </div>
+
+        <div id="tab-resultados" style="display: none;">
+          <h3>📊 Resultados</h3>
+          <button class="btn btn-secondary btn-small" style="margin-bottom: 15px;" onclick="docenteApp.cargarResultados()">🔄 Actualizar Tabla</button>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead><tr><th>Fecha</th><th>Alumno</th><th>Materia</th><th>Período</th><th>Puntaje</th></tr></thead>
+              <tbody id="tabla-resultados-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="tab-notas" style="display:none;">
+          <h3>📅 Notas por Período</h3>
+          <button class="btn btn-secondary btn-small" style="margin-bottom:15px;" onclick="docenteApp.cargarNotas()">🔄 Actualizar</button>
+          <div id="notas-container" style="overflow-x:auto;"></div>
+        </div>
+
+        <div id="tab-config" style="display: none;">
+          <h3>⚙️ Configuración</h3>
+          <div style="padding:20px; border:1px solid var(--border); border-radius:8px; margin-bottom:15px;">
+            <h4>1. Estructura de la Base de Datos</h4>
+            <p style="margin-bottom:10px;">Presiona este botón una vez si acabas de configurar el sistema por primera vez: prepara la configuración inicial en Firebase (no necesitas tocar nada a mano).</p>
+            <button class="btn btn-secondary" onclick="docenteApp.inicializarBD()">📂 Inicializar / Actualizar Base de Datos</button>
+          </div>
+          <div style="padding:20px; border:1px solid #fca5a5; background:#fef2f2; border-radius:8px; margin-bottom:15px;">
+            <h4 style="color:var(--danger)">2. Zona de Peligro (Mis Datos)</h4>
+            <button class="btn btn-danger" onclick="docenteApp.borrarDatosDocente()">🗑️ Borrar mis Materias y Resultados</button>
+          </div>
+          <div style="padding:20px; border:1px solid #000; background:#1f2937; border-radius:8px; color:white;">
+            <h4 style="color:white;">3. Borrado Global (Admin)</h4>
+            <button class="btn btn-dark" style="border:1px solid white;" onclick="docenteApp.borrarDatosGlobal()">⚠️ Purgar Base de Datos Global</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA 3: EXAMEN ALUMNO -->
+  <div id="view-examen" class="view-section">
+    <div class="card" id="examen-contenedor-principal">
+      <h2 id="examen-titulo">Examen</h2>
+      <p>Estudiante: <span id="examen-alumno-nombre" style="font-weight: 600;"></span></p>
+      <div id="sync-status" class="alert alert-warning" style="display:none;"></div>
+      <div id="area-preguntas"></div>
+      <button class="btn" style="margin-top: 25px;" onclick="alumnoApp.enviarExamen()">Finalizar y Enviar Examen</button>
+    </div>
+  </div>
+
+  <div id="modal-detalle" class="modal-overlay">
+    <div class="modal-content">
+      <button class="modal-close" onclick="ui.closeModal()">&times;</button>
+      <h3 id="modal-nombre">Detalle</h3>
+      <p id="modal-puntaje" style="font-weight: 600; color: var(--primary);"></p>
+      <div id="modal-respuestas"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       Firebase — TODO el backend del sistema de exámenes vive aquí ahora.
+       Ya no se usa Google Apps Script / Google Sheets para nada.
+       Mismo proyecto Firebase (sica-inmu-2026) que Asistencia y Portal.
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-examenes.js"></script>
+
+  <script>
+    // ==========================================
+    // 1. BACKEND — 100% Firebase (Firestore + Authentication)
+    //    apiCall() ya no llama a Google Apps Script: despacha directo a
+    //    window.FBExamenes.ejecutar(...), que vive en firebase-examenes.js
+    // ==========================================
+    async function apiCall(action, data = {}) {
+      try {
+        if (!window.FBExamenes) return { error: "El módulo de Firebase (firebase-examenes.js) no cargó. Revisa tu conexión y recarga la página." };
+        const json = await window.FBExamenes.ejecutar(action, data);
+        if (json && json.error) console.error(`[${action}] Error:`, json.error);
+        return json || {};
+      } catch (error) {
+        console.error("Error API:", error);
+        return { error: "Fallo de conexión con Firebase. Verifica tu internet." };
+      }
+    }
+
+    const PALETA_COLORES = ['#2563eb','#db2777','#059669','#d97706','#7c3aed','#0891b2','#dc2626','#4d7c0f','#be185d','#0f766e','#9333ea','#ca8a04'];
+    function colorMateria(texto) {
+      let hash = 0;
+      const str = (texto || '').toString();
+      for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+      return PALETA_COLORES[hash % PALETA_COLORES.length];
+    }
+
+    const state = {
+      docenteNombre: '', materiasCache: [], materiaActualDocente: null, examenEditando: [],
+      alumnoActivo: { nombre: '', nie: '', materia: '', pin: '', examen: [] }, respuestasAlumno: {}, bloqueadoGlobal: false,
+      sesionesCache: [], sesionesInterval: null, rosterCache: [], accesosCache: []
+    };
+
+    // ==========================================
+    // SISTEMA ADMINISTRADOR
+    // ==========================================
+    function limpiarClave(v) {
+      return (v || '').toString().trim().replace(/[\u2010\u2011\u2012\u2013\u2014\u2212]/g, '-');
+    }
+
+    const admin = {
+      solicitarClaveAdmin: async () => {
+        const claveAdmin = prompt("Acceso de Administrador. Ingrese la clave maestra:");
+        if (!claveAdmin) return;
+        const opcion = prompt("Ya escribiste la clave maestra. Ahora elige una opción escribiendo el número:\n\n1 = Encender / Apagar el sistema\n2 = Cambiar el PIN que usan los docentes para crear su cuenta");
+        if (opcion === '2') {
+          const nuevaClave = prompt("Escribe el nuevo PIN de registro de docentes (puede ser lo que quieras, no tiene que llevar guion):");
+          if (!nuevaClave) return;
+          const res = await apiCall('cambiarClaveRegistro', { passwordAdmin: limpiarClave(claveAdmin), nuevaClave: limpiarClave(nuevaClave) });
+          if (res.status) alert(`Listo. Desde ahora los docentes deben usar este PIN para crear su cuenta: ${limpiarClave(nuevaClave)}`);
+          else alert(res.error || 'Error al cambiar el PIN');
+          return;
+        }
+        const res = await apiCall('alternarBloqueoSistema', { password: limpiarClave(claveAdmin) });
+        if(res.error) alert(res.error);
+        else { alert(res.bloqueado ? "SISTEMA APAGADO." : "SISTEMA REACTIVADO."); admin.verificarEstadoRealtime(); }
+      },
+      verificarEstadoRealtime: async () => {
+        const res = await apiCall('obtenerEstadoSistema');
+        if(!res.error) {
+          state.bloqueadoGlobal = res.bloqueado;
+          document.getElementById('system-down-overlay').style.display = res.bloqueado ? 'flex' : 'none';
+        }
+      }
+    };
+    window.onload = () => {
+      admin.verificarEstadoRealtime();
+      setInterval(admin.verificarEstadoRealtime, 15000);
+      mathKeyboard.init();
+      agregarToggleContraseña();
+      const elNombre = document.getElementById('al-nombre');
+      elNombre.addEventListener('input', function() {
+        const pos = this.selectionStart;
+        const limpio = this.value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+        if(limpio !== this.value) { this.value = limpio; try { this.setSelectionRange(pos, pos); } catch(e) {} }
+      });
+    };
+
+    // Agrega un botón 👁 a cada campo de contraseña para poder ver lo que se escribió
+    // antes de enviarlo (evita errores de tipeo invisibles).
+    function agregarToggleContraseña() {
+      document.querySelectorAll('input[type="password"]').forEach(input => {
+        if (input.dataset.toggleAgregado) return;
+        input.dataset.toggleAgregado = '1';
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
+        input.parentNode.insertBefore(wrapper, input);
+        wrapper.appendChild(input);
+        input.style.paddingRight = '42px';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = '👁';
+        btn.title = 'Mostrar/ocultar';
+        btn.style.cssText = 'position:absolute; right:6px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:17px; padding:6px;';
+        btn.onclick = () => {
+          input.type = input.type === 'password' ? 'text' : 'password';
+          btn.textContent = input.type === 'password' ? '👁' : '🙈';
+        };
+        wrapper.appendChild(btn);
+      });
+    }
+
+    // ==========================================
+    // TECLADO MATEMÁTICO FLOTANTE
+    // ==========================================
+    const mathKeyboard = {
+      simbolos: ['√','π','²','³','±','÷','×','≤','≥','∞','Σ','Δ','θ','°','½','¼','∫','∂','∴','∝','∈','∅','∪','∩'],
+      ultimoFoco: null,
+      init: () => {
+        document.addEventListener('focusin', (e) => {
+          if(e.target && (e.target.tagName === 'TEXTAREA' || (e.target.tagName === 'INPUT' && e.target.type === 'text'))) {
+            mathKeyboard.ultimoFoco = e.target;
+          }
+        });
+        document.getElementById('math-kb-grid').innerHTML = mathKeyboard.simbolos.map(s => `<button type="button" onclick="mathKeyboard.insertar('${s}')">${s}</button>`).join('');
+      },
+      toggle: () => {
+        const panel = document.getElementById('math-kb-panel');
+        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+      },
+      insertar: (simbolo) => {
+        const el = mathKeyboard.ultimoFoco;
+        if(!el || !document.body.contains(el)) { alert('Toca primero el campo de texto donde quieres escribir el símbolo.'); return; }
+        const start = el.selectionStart ?? el.value.length;
+        const end = el.selectionEnd ?? el.value.length;
+        el.value = el.value.slice(0, start) + simbolo + el.value.slice(end);
+        const nuevaPos = start + simbolo.length;
+        el.focus();
+        try { el.setSelectionRange(nuevaPos, nuevaPos); } catch(e) {}
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    };
+
+    // ==========================================
+    // UI CONTROL
+    // ==========================================
+    const ui = {
+      showAlert: (elId, msg, type = 'alert-danger') => {
+        const el = document.getElementById(elId);
+        el.textContent = msg; el.className = `alert ${type}`; el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 6000);
+      },
+      showView: (viewId) => {
+        document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+        document.getElementById(viewId).classList.add('active');
+        document.getElementById('corner-logo').style.display = (viewId === 'view-login') ? 'none' : 'block';
+        document.getElementById('math-kb-toggle').style.display = (viewId === 'view-login') ? 'none' : 'block';
+      },
+      switchLogin: (tipo) => {
+        document.querySelectorAll('#view-login .tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('form-alumno').style.display = tipo === 'alumno' ? 'block' : 'none';
+        document.getElementById('form-docente').style.display = tipo === 'docente' ? 'block' : 'none';
+        event.target.classList.add('active');
+      },
+      switchDocenteTab: (tab) => {
+        document.querySelectorAll('.side-btn[data-tab]').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+        ['editor','alumnos','roster','accesos','resultados','notas','crear','config'].forEach(t => {
+          const el = document.getElementById('tab-' + t);
+          if(el) el.style.display = (t === tab) ? 'block' : 'none';
+        });
+        if(state.sesionesInterval) { clearInterval(state.sesionesInterval); state.sesionesInterval = null; }
+        if(tab === 'resultados') docenteApp.cargarResultados();
+        if(tab === 'editor') docenteApp.inicializarEditor();
+        if(tab === 'alumnos') { docenteApp.cargarSesiones(); state.sesionesInterval = setInterval(docenteApp.cargarSesiones, 2000); }
+        if(tab === 'roster') docenteApp.cargarRoster();
+        if(tab === 'accesos') docenteApp.cargarAccesos();
+        if(tab === 'notas') docenteApp.cargarNotas();
+      },
+      closeModal: () => document.getElementById('modal-detalle').style.display = 'none',
+      logout: () => location.reload()
+    };
+
+    // ==========================================
+    // DOCENTE APP
+    // ==========================================
+    const docenteApp = {
+      abrirCrearCuenta: () => document.getElementById('modal-crear-cuenta').style.display = 'flex',
+      crearCuenta: async () => {
+        const clave = limpiarClave(document.getElementById('cc-clave').value);
+        const usuario = document.getElementById('cc-usuario').value.trim();
+        const pass = document.getElementById('cc-pass').value;
+        const pass2 = document.getElementById('cc-pass2').value;
+        if(!clave || !usuario || !pass) return ui.showAlert('alert-crear-cuenta', 'Completa todos los campos');
+        if(pass !== pass2) return ui.showAlert('alert-crear-cuenta', 'Las contraseñas no coinciden');
+        const res = await apiCall('registrarDocente', { claveSeguridad: clave, usuario, password: pass });
+        if(res.status) {
+          alert('Cuenta creada con éxito. Ya puedes iniciar sesión.');
+          document.getElementById('modal-crear-cuenta').style.display = 'none';
+          document.getElementById('doc-nombre').value = usuario;
+          document.getElementById('cc-clave').value = ''; document.getElementById('cc-usuario').value = '';
+          document.getElementById('cc-pass').value = ''; document.getElementById('cc-pass2').value = '';
+        } else {
+          ui.showAlert('alert-crear-cuenta', res.error || 'Error al crear cuenta');
+        }
+      },
+      login: async () => {
+        const nombre = document.getElementById('doc-nombre').value.trim();
+        const pass = document.getElementById('doc-pass').value;
+        if(!nombre || !pass) return ui.showAlert('alert-login', 'Ingrese usuario y contraseña');
+
+        const btn = document.getElementById('btn-login-doc'); btn.textContent = 'Verificando...'; btn.disabled = true;
+        const res = await apiCall('verificarDocente', { usuario: nombre, password: pass });
+        btn.textContent = 'Acceder al Panel'; btn.disabled = false;
+
+        if(res.status) {
+          state.docenteNombre = res.nombre;
+          document.getElementById('nombre-docente-side').textContent = res.nombre;
+          ui.showView('view-docente');
+          docenteApp.inicializarEditor();
+        } else { ui.showAlert('alert-login', res.error || 'Error desconocido'); }
+      },
+
+      crearMateria: async () => {
+        const nombreMat = document.getElementById('nueva-mat-nombre').value.trim();
+        const pinMat = document.getElementById('nueva-mat-pin').value.trim();
+        const grado = document.getElementById('nueva-mat-grado').value.trim();
+        const seccion = document.getElementById('nueva-mat-seccion').value.trim();
+        const periodo = document.getElementById('nueva-mat-periodo').value;
+        const tipoMateria = document.getElementById('nueva-mat-tipo').value;
+        const especialidad = document.getElementById('nueva-mat-especialidad').value.trim();
+        const actividadNota = document.getElementById('nueva-mat-actividad').value;
+        const escala = document.getElementById('nueva-mat-escala').value;
+        if(!nombreMat || !pinMat) return ui.showAlert('alert-docente', 'Llene al menos el nombre y el PIN', 'alert-danger');
+        const res = await apiCall('crearNuevaMateria', {
+          nombreMateria: nombreMat, pin: pinMat, nombreDocente: state.docenteNombre, grado, seccion, periodo,
+          tipoMateria, especialidad, actividadNota, escala
+        });
+        ui.showAlert('alert-docente', res.msg, res.status ? 'alert-success' : 'alert-danger');
+        if(res.status) {
+          document.getElementById('nueva-mat-nombre').value = ''; document.getElementById('nueva-mat-pin').value = '';
+          document.getElementById('nueva-mat-grado').value = ''; document.getElementById('nueva-mat-seccion').value = '';
+          document.getElementById('nueva-mat-especialidad').value = '';
+        }
+      },
+
+      inicializarEditor: async () => {
+        const materias = await apiCall('obtenerMateriasPorDocente', { nombreDocente: state.docenteNombre });
+        if(materias.error) return ui.showAlert('alert-docente', 'Error al cargar materias: ' + materias.error, 'alert-danger');
+        materias.sort((a,b) => (a.periodo||'1').localeCompare(b.periodo||'1') || a.materia.localeCompare(b.materia));
+        state.materiasCache = materias;
+        state.materiaActualDocente = null;
+        document.getElementById('editor-preguntas-container').innerHTML = '';
+        document.getElementById('materia-actual-info').style.display = 'none';
+        docenteApp.renderizarChipsMateria();
+      },
+      renderizarChipsMateria: () => {
+        const cont = document.getElementById('materia-chips');
+        if(!cont) return;
+        if(state.materiasCache.length === 0) { cont.innerHTML = '<p>Aún no tienes materias. Ve a "➕ Crear Materia".</p>'; return; }
+        cont.innerHTML = state.materiasCache.map((m, idx) => {
+          const color = colorMateria(m.materia + m.periodo);
+          const activo = state.materiaActualDocente && state.materiaActualDocente.pin === m.pin;
+          const extra = m.grado ? ` · ${m.grado}${m.seccion ? '-' + m.seccion : ''}` : '';
+          return `<button type="button" class="chip-materia ${activo ? 'activo' : ''}" style="--chip-color:${color}" onclick="docenteApp.seleccionarMateria(${idx})">${m.materia} · P${m.periodo || 1}${extra}</button>`;
+        }).join('');
+      },
+      seleccionarMateria: (idx) => {
+        state.materiaActualDocente = state.materiasCache[idx];
+        state.examenEditando = (state.materiaActualDocente.examen || []).map(docenteApp.normalizarPregunta);
+        const badge = document.getElementById('materia-actual-badge');
+        badge.textContent = `${state.materiaActualDocente.materia} — PIN: ${state.materiaActualDocente.pin}`;
+        badge.style.background = colorMateria(state.materiaActualDocente.materia + state.materiaActualDocente.periodo);
+        badge.style.color = '#fff';
+        document.getElementById('materia-actual-info').style.display = 'flex';
+        docenteApp.renderizarChipsMateria();
+        docenteApp.renderizarEditor();
+      },
+      editarMateriaActual: async () => {
+        const m = state.materiaActualDocente;
+        if(!m) return;
+        const grado = prompt('Grado (déjalo vacío si no aplica):', m.grado || '');
+        if(grado === null) return;
+        const seccion = prompt('Sección:', m.seccion || '');
+        if(seccion === null) return;
+        const periodo = prompt('Período (escribe solo 1, 2, 3 o 4):', (m.periodo || '1').toString());
+        if(periodo === null) return;
+        const tipoMateria = prompt('Tipo de materia — escribe "basica" o "modulo" (para que la nota sincronice bien con Asistencia):', m.tipoMateria || 'basica');
+        if(tipoMateria === null) return;
+        const especialidad = prompt('Especialidad (solo si es módulo técnico, si no déjalo vacío):', m.especialidad || '');
+        if(especialidad === null) return;
+        const actividadNota = prompt('¿En qué actividad va la nota del examen? — a1 (Cuaderno), a2 (Integradora/Tarea) o a3 (Examen):', m.actividadNota || 'a3');
+        if(actividadNota === null) return;
+        const escala = prompt('Escala de calificación (0-10 ó 0-5):', m.escala || '0-10');
+        if(escala === null) return;
+        const res = await apiCall('editarMateria', {
+          nombreDocente: state.docenteNombre, materiaNombre: m.materia, pinActual: m.pin,
+          grado: grado.trim(), seccion: seccion.trim(), periodo: periodo.trim(),
+          tipoMateria: tipoMateria.trim(), especialidad: especialidad.trim(),
+          actividadNota: actividadNota.trim(), escala: escala.trim()
+        });
+        if(res.status) { ui.showAlert('alert-docente', 'Materia actualizada correctamente.', 'alert-success'); docenteApp.inicializarEditor(); }
+        else alert(res.error || 'Error al actualizar la materia');
+      },
+
+      normalizarPregunta: (preg) => {
+        if(preg.tipo) return preg;
+        const opciones = (preg.opciones || []).filter(o => o !== undefined);
+        const idx = opciones.findIndex(o => o === preg.correcta);
+        return { tipo: 'unica', pregunta: preg.pregunta || '', opciones: opciones.length ? opciones : ['', ''], correctas: idx >= 0 ? [idx] : [], respuestaCorta: '' };
+      },
+
+      renderizarEditor: () => {
+        const container = document.getElementById('editor-preguntas-container');
+        container.innerHTML = state.examenEditando.length === 0 ? '<p>No hay preguntas aún. Haz clic en "+ Pregunta" para empezar.</p>' : '';
+        state.examenEditando.forEach((preg, index) => {
+          const tipo = preg.tipo || 'unica';
+          let cuerpo = '';
+          if(tipo === 'unica' || tipo === 'multiple') {
+            cuerpo = (preg.opciones || []).map((op, o) => {
+              const esCorrecta = (preg.correctas || []).includes(o);
+              return `
+                <div class="gform-opcion-row">
+                  <div class="gform-marker ${tipo} ${esCorrecta ? 'correcta' : ''}" onclick="docenteApp.marcarCorrecta(${index},${o})" title="Marcar como respuesta correcta">${esCorrecta ? '✓' : ''}</div>
+                  <input type="text" class="gform-opcion-input" value="${(op || '').replace(/"/g,'&quot;')}" placeholder="Opción ${o+1}" oninput="docenteApp.actOpc(${index},${o},this.value)">
+                  <button class="gform-opcion-del" onclick="docenteApp.eliminarOpcion(${index},${o})" title="Eliminar opción">✕</button>
+                </div>`;
+            }).join('');
+            cuerpo += `<button class="gform-add-opcion" onclick="docenteApp.agregarOpcion(${index})">+ Agregar opción</button>`;
+          } else {
+            cuerpo = `
+              <div class="form-group" style="margin-top:10px;">
+                <label>Respuesta(s) correcta(s) — separa con coma si aceptas varias formas válidas (útil para fórmulas)</label>
+                <textarea class="form-control" rows="2" placeholder="Ej: 24, x=24, 24 cm" oninput="docenteApp.actRespuestaCorta(${index}, this.value)">${preg.respuestaCorta || ''}</textarea>
+              </div>`;
+          }
+
+          container.innerHTML += `
+            <div class="gform-card" style="border-left-color:${colorMateria(state.materiaActualDocente.materia + state.materiaActualDocente.periodo)}33;">
+              <div class="gform-card-header">
+                <input type="text" class="gform-pregunta-input" value="${(preg.pregunta || '').replace(/"/g,'&quot;')}" placeholder="Escribe tu pregunta aquí" oninput="docenteApp.actPreg(${index},'pregunta',this.value)">
+                <select class="gform-tipo-select" onchange="docenteApp.cambiarTipoPregunta(${index}, this.value)">
+                  <option value="unica" ${tipo==='unica'?'selected':''}>◉ Selección única</option>
+                  <option value="multiple" ${tipo==='multiple'?'selected':''}>☑ Selección múltiple</option>
+                  <option value="corta" ${tipo==='corta'?'selected':''}>✏ Respuesta corta / Matemática</option>
+                </select>
+              </div>
+              ${cuerpo}
+              <div class="gform-card-footer">
+                <button class="icon-btn" onclick="docenteApp.duplicarPregunta(${index})" title="Duplicar pregunta">⧉ Duplicar</button>
+                <button class="icon-btn" onclick="docenteApp.eliminarPregunta(${index})" title="Eliminar pregunta" style="color:var(--danger);">🗑 Eliminar</button>
+              </div>
+            </div>`;
+        });
+      },
+      agregarPregunta: () => {
+        if(!state.materiaActualDocente) return alert("Selecciona una materia");
+        state.examenEditando.push({ tipo: 'unica', pregunta: '', opciones: ['', ''], correctas: [], respuestaCorta: '' });
+        docenteApp.renderizarEditor();
+        setTimeout(() => {
+          const boxes = document.querySelectorAll('.gform-card');
+          boxes[boxes.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
+      },
+      eliminarPregunta: (i) => { state.examenEditando.splice(i, 1); docenteApp.renderizarEditor(); },
+      duplicarPregunta: (i) => {
+        const copia = JSON.parse(JSON.stringify(state.examenEditando[i]));
+        state.examenEditando.splice(i + 1, 0, copia);
+        docenteApp.renderizarEditor();
+      },
+      cambiarTipoPregunta: (i, tipo) => {
+        const preg = state.examenEditando[i];
+        preg.tipo = tipo;
+        if((tipo === 'unica' || tipo === 'multiple') && (!preg.opciones || preg.opciones.length < 2)) preg.opciones = ['', ''];
+        if(tipo === 'unica' && preg.correctas && preg.correctas.length > 1) preg.correctas = preg.correctas.slice(0, 1);
+        docenteApp.renderizarEditor();
+      },
+      marcarCorrecta: (i, o) => {
+        const preg = state.examenEditando[i];
+        preg.correctas = preg.correctas || [];
+        if(preg.tipo === 'multiple') {
+          const pos = preg.correctas.indexOf(o);
+          if(pos >= 0) preg.correctas.splice(pos, 1); else preg.correctas.push(o);
+        } else { preg.correctas = [o]; }
+        docenteApp.renderizarEditor();
+      },
+      agregarOpcion: (i) => { state.examenEditando[i].opciones.push(''); docenteApp.renderizarEditor(); },
+      eliminarOpcion: (i, o) => {
+        const preg = state.examenEditando[i];
+        preg.opciones.splice(o, 1);
+        preg.correctas = (preg.correctas || []).filter(c => c !== o).map(c => c > o ? c - 1 : c);
+        docenteApp.renderizarEditor();
+      },
+      actPreg: (i, c, v) => state.examenEditando[i][c] = v,
+      actOpc: (i, o, v) => state.examenEditando[i].opciones[o] = v,
+      actRespuestaCorta: (i, v) => state.examenEditando[i].respuestaCorta = v,
+
+      guardarExamen: async () => {
+        if(!state.materiaActualDocente) return ui.showAlert('alert-docente', 'Selecciona primero una materia.', 'alert-danger');
+        ui.showAlert('alert-docente', 'Guardando...', 'alert-warning');
+        const res = await apiCall('guardarExamenEditado', { pin: state.materiaActualDocente.pin, examenEstructura: state.examenEditando });
+        if(res.status) {
+          ui.showAlert('alert-docente', 'Examen guardado correctamente.', 'alert-success');
+        } else {
+          ui.showAlert('alert-docente', res.error || 'Error al guardar. Revisa que la Base de Datos esté inicializada y que el script esté bien desplegado.', 'alert-danger');
+        }
+      },
+
+      cargarResultados: async () => {
+        const tbody = document.getElementById('tabla-resultados-body');
+        tbody.innerHTML = '<tr><td colspan="5">Cargando...</td></tr>';
+        const res = await apiCall('obtenerResultadosDocente', { nombreDocente: state.docenteNombre });
+        if(res.error) return tbody.innerHTML = `<tr><td colspan="5">Error al cargar: ${res.error}</td></tr>`;
+        tbody.innerHTML = res.length === 0 ? '<tr><td colspan="5">Sin datos</td></tr>' : '';
+        res.reverse().forEach(r => {
+          const data = encodeURIComponent(JSON.stringify(r));
+          tbody.innerHTML += `<tr onclick="docenteApp.verModal('${data}')" style="cursor:pointer;"><td>${new Date(r.fecha).toLocaleDateString()}</td><td><b>${r.alumno}</b></td><td>${r.materia}</td><td>P${r.periodo || 1}</td><td><span style="background:var(--primary); color:white; padding:4px 8px; border-radius:12px;">${r.puntaje}</span></td></tr>`;
+        });
+      },
+      verModal: (dataString) => {
+        const data = JSON.parse(decodeURIComponent(dataString));
+        document.getElementById('modal-nombre').textContent = `${data.alumno} - ${data.materia}`;
+        document.getElementById('modal-puntaje').textContent = `Puntaje: ${data.puntaje}`;
+        document.getElementById('modal-respuestas').innerHTML = data.detalle.map((d, i) => `
+          <div class="result-item ${d.estado === 'Correcto' ? 'correcto' : 'incorrecto'}">
+            <p style="margin:0; font-weight:600;">${i+1}. ${d.pregunta}</p>
+            <p style="margin:5px 0 0 0; font-size:13px;">Respuesta: <b>${d.respuestaAlumno}</b> ${d.estado === 'Correcto' ? '✅' : '❌'}</p>
+            ${d.estado !== 'Correcto' && d.correctaTexto ? `<p style="margin:3px 0 0 0; font-size:12px; color:var(--success);">Correcta: <b>${d.correctaTexto}</b></p>` : ''}
+          </div>`).join('');
+        document.getElementById('modal-detalle').style.display = 'flex';
+      },
+
+      cargarNotas: async () => {
+        const cont = document.getElementById('notas-container');
+        cont.innerHTML = '<p>Cargando...</p>';
+        const res = await apiCall('obtenerNotasDocente', { nombreDocente: state.docenteNombre });
+        if(res.error) return cont.innerHTML = `<p>Error al cargar: ${res.error}</p>`;
+        if(!res.length) return cont.innerHTML = '<p>Aún no hay notas registradas.</p>';
+        let html = `<table><thead><tr><th>Alumno</th><th>Período 1</th><th>Período 2</th><th>Período 3</th><th>Período 4</th></tr></thead><tbody>`;
+        res.forEach(a => {
+          html += `<tr><td><b>${a.alumno}</b></td>`;
+          ['1','2','3','4'].forEach(p => {
+            const items = a.periodos[p] || [];
+            html += `<td>${items.map(it => `${it.materia}: <b>${it.puntaje}</b>`).join('<br>') || '-'}</td>`;
+          });
+          html += `</tr>`;
+        });
+        html += '</tbody></table>';
+        cont.innerHTML = html;
+      },
+
+      cargarSesiones: async () => {
+        const tbody = document.getElementById('tabla-sesiones-body');
+        if(!tbody) return;
+        const res = await apiCall('obtenerSesionesDocente', { nombreDocente: state.docenteNombre });
+        if(res.error) { tbody.innerHTML = `<tr><td colspan="5">Error al cargar: ${res.error}</td></tr>`; return; }
+        state.sesionesCache = res;
+        if(res.length === 0) { tbody.innerHTML = '<tr><td colspan="5">Aún no hay alumnos registrados</td></tr>'; return; }
+        tbody.innerHTML = '';
+        res.forEach((s, idx) => {
+          const badgeClass = s.estado === 'BLOQUEADO' ? 'badge-bloqueado' : (s.estado === 'FINALIZADO' ? 'badge-finalizado' : 'badge-activo');
+          let acciones = '—';
+          if(s.estado === 'BLOQUEADO') {
+            acciones = `<div style="display:flex; gap:5px; align-items:center; flex-wrap:wrap;">
+              <input type="text" placeholder="PIN especial" id="pin-input-${idx}" style="width:100px; padding:6px; border:1px solid var(--border); border-radius:6px; font-size:12px;">
+              <button class="btn btn-small" style="margin:0;" onclick="docenteApp.asignarPin(${idx})">Asignar</button>
+              <button class="btn btn-small btn-secondary" style="margin:0;" onclick="docenteApp.desbloquear(${idx})">Desbloquear</button>
+            </div>`;
+          }
+          tbody.innerHTML += `<tr><td>${s.nombre}</td><td>${s.materia}</td><td><span class="badge ${badgeClass}">${s.estado}</span></td><td>${s.advertencias || 0}</td><td>${acciones}</td></tr>`;
+        });
+      },
+      asignarPin: async (idx) => {
+        const s = state.sesionesCache[idx];
+        const valor = document.getElementById(`pin-input-${idx}`).value.trim();
+        const res = await apiCall('gestionarSesionAlumno', { sesionId: s._docId, accion: 'asignarPin', valor });
+        if(res.status) { alert(`PIN especial: ${res.pinReingreso}\nComunícaselo al alumno para que pueda continuar su examen.`); docenteApp.cargarSesiones(); }
+        else alert(res.error || 'Error al asignar PIN');
+      },
+      desbloquear: async (idx) => {
+        const s = state.sesionesCache[idx];
+        if(!confirm(`¿Desbloquear a ${s.nombre} en ${s.materia}? Podrá volver a ingresar con el PIN normal de la materia.`)) return;
+        const res = await apiCall('gestionarSesionAlumno', { sesionId: s._docId, accion: 'desbloquear' });
+        if(res.status) docenteApp.cargarSesiones(); else alert(res.error || 'Error al desbloquear');
+      },
+
+      cargarRoster: async () => {
+        const tbody = document.getElementById('tabla-roster-body');
+        tbody.innerHTML = '<tr><td colspan="5">Cargando...</td></tr>';
+        const res = await apiCall('obtenerAlumnosRoster', { nombreDocente: state.docenteNombre });
+        if(res.error) return tbody.innerHTML = `<tr><td colspan="5">Error al cargar: ${res.error}</td></tr>`;
+        state.rosterCache = res;
+        tbody.innerHTML = res.length === 0 ? '<tr><td colspan="5">Sin alumnos registrados</td></tr>' : '';
+        res.forEach((a, idx) => {
+          tbody.innerHTML += `<tr><td>${a.nombre}</td><td>${a.nie || '-'}</td><td>${a.grado || '-'}</td><td>${a.seccion || '-'}</td><td><button class="icon-btn" style="color:var(--danger);" onclick="docenteApp.eliminarRoster(${idx})">🗑</button></td></tr>`;
+        });
+      },
+      agregarRoster: async () => {
+        const nombre = document.getElementById('roster-nombre').value.trim();
+        const nie = document.getElementById('roster-nie').value.trim();
+        const grado = document.getElementById('roster-grado').value.trim();
+        const seccion = document.getElementById('roster-seccion').value.trim();
+        if(!nombre) return alert('El nombre es obligatorio');
+        const res = await apiCall('crearAlumnoRoster', { nombreDocente: state.docenteNombre, nombre, nie, grado, seccion });
+        if(res.status) { ['roster-nombre','roster-nie','roster-grado','roster-seccion'].forEach(id => document.getElementById(id).value = ''); docenteApp.cargarRoster(); }
+        else alert(res.error || 'Error al guardar');
+      },
+      eliminarRoster: async (idx) => {
+        const a = state.rosterCache[idx];
+        if(!confirm(`¿Eliminar a ${a.nombre} del registro?`)) return;
+        const res = await apiCall('eliminarAlumnoRoster', { nombreDocente: state.docenteNombre, nombre: a.nombre, nie: a.nie });
+        if(res.status) docenteApp.cargarRoster(); else alert(res.error || 'Error');
+      },
+
+      // Trae el padrón de alumnos ya existente en el Sistema de Asistencia
+      // (Firebase alumnos_inmu) para el grado/sección de la materia
+      // seleccionada, y los sube al Registro de Alumnos de este examen.
+      sincronizarRosterDesdeAsistencia: async () => {
+        const m = state.materiaActualDocente;
+        if (!m || !m.grado || !m.seccion) {
+          return alert('Primero selecciona (o crea) una materia con Grado y Sección definidos, en "Mis Exámenes".');
+        }
+        if (!window.FBExamenes) return alert('El módulo de sincronización con Firebase no cargó. Revisa tu conexión.');
+        const btn = event && event.target;
+        if (btn) { btn.textContent = 'Sincronizando...'; btn.disabled = true; }
+        const res = await window.FBExamenes.obtenerRosterPorGradoSeccion(m.grado, m.seccion);
+        if (btn) { btn.textContent = '🔄 Traer alumnos desde Asistencia (por grado y sección)'; btn.disabled = false; }
+        if (!res.ok) return alert('No se pudo leer el padrón de Asistencia: ' + (res.error || 'error desconocido'));
+        if (!res.alumnos.length) return alert(`No hay alumnos registrados en Asistencia para ${m.grado} - ${m.seccion}.`);
+        if (!confirm(`Se encontraron ${res.alumnos.length} alumnos en Asistencia para ${m.grado} - ${m.seccion}. ¿Agregarlos a tu Registro de Alumnos de este examen?`)) return;
+        let creados = 0;
+        for (const a of res.alumnos) {
+          const r = await apiCall('crearAlumnoRoster', { nombreDocente: state.docenteNombre, nombre: a.nombre, nie: a.nie, grado: a.grado, seccion: a.seccion });
+          if (r.status) creados++;
+        }
+        alert(`Listo. ${creados} de ${res.alumnos.length} alumnos sincronizados desde Asistencia.`);
+        docenteApp.cargarRoster();
+      },
+
+      cargarAccesos: async () => {
+        const sel = document.getElementById('acceso-materia');
+        sel.innerHTML = state.materiasCache.length ? state.materiasCache.map(m => `<option value="${m.materia}">${m.materia} (P${m.periodo || 1})</option>`).join('') : '<option value="">Sin materias</option>';
+        const tbody = document.getElementById('tabla-accesos-body');
+        tbody.innerHTML = '<tr><td colspan="5">Cargando...</td></tr>';
+        const res = await apiCall('obtenerAccesosAlumnoDocente', { nombreDocente: state.docenteNombre });
+        if(res.error) return tbody.innerHTML = `<tr><td colspan="5">Error al cargar: ${res.error}</td></tr>`;
+        state.accesosCache = res;
+        tbody.innerHTML = res.length === 0 ? '<tr><td colspan="5">Sin accesos especiales creados</td></tr>' : '';
+        res.forEach((a, idx) => {
+          tbody.innerHTML += `<tr><td>${a.nombre}</td><td>${a.nie}</td><td>${a.materia}</td><td><b>${a.pin}</b></td><td><button class="icon-btn" style="color:var(--danger);" onclick="docenteApp.eliminarAcceso(${idx})">🗑</button></td></tr>`;
+        });
+      },
+      crearAcceso: async () => {
+        const materia = document.getElementById('acceso-materia').value;
+        const nombre = document.getElementById('acceso-nombre').value.trim();
+        const nie = document.getElementById('acceso-nie').value.trim();
+        const pin = document.getElementById('acceso-pin').value.trim();
+        if(!materia) return alert('Selecciona una materia');
+        if(!nie) return alert('El NIE es obligatorio');
+        const res = await apiCall('crearAccesoAlumno', { nombreDocente: state.docenteNombre, nombre, nie, materia, pinIndividual: pin });
+        if(res.status) {
+          alert(`Acceso creado.\nEl alumno debe ingresar:\nNIE: ${nie}\nPIN: ${res.pin}`);
+          ['acceso-nombre','acceso-nie','acceso-pin'].forEach(id => document.getElementById(id).value = '');
+          docenteApp.cargarAccesos();
+        } else { alert(res.error || 'Error al crear acceso'); }
+      },
+      eliminarAcceso: async (idx) => {
+        const a = state.accesosCache[idx];
+        if(!confirm(`¿Eliminar acceso especial de ${a.nombre}?`)) return;
+        const res = await apiCall('eliminarAccesoAlumno', { nombreDocente: state.docenteNombre, nie: a.nie, materia: a.materia });
+        if(res.status) docenteApp.cargarAccesos(); else alert(res.error || 'Error');
+      },
+
+      inicializarBD: async () => {
+        ui.showAlert('alert-docente', 'Procesando...', 'alert-warning');
+        const res = await apiCall('inicializarBD');
+        ui.showAlert('alert-docente', res.msg || res.error, res.status ? 'alert-success' : 'alert-danger');
+      },
+      borrarDatosDocente: async () => {
+        if(confirm("⚠️ ¿Estás completamente seguro de borrar TODAS TUS materias y resultados?")) {
+          ui.showAlert('alert-docente', 'Borrando...', 'alert-warning');
+          const res = await apiCall('borrarDatosDocente', { nombreDocente: state.docenteNombre });
+          ui.showAlert('alert-docente', res.msg, res.status ? 'alert-success' : 'alert-danger');
+          docenteApp.inicializarEditor();
+        }
+      },
+      borrarDatosGlobal: async () => {
+        const pass = limpiarClave(prompt("Ingrese Clave Maestra (Admin) para continuar:"));
+        if(pass && confirm("⚠️ Esto borrará TODO (materias, resultados, sesiones, alumnos y accesos) para TODOS los docentes. ¿Proceder?")) {
+          ui.showAlert('alert-docente', 'Purgando...', 'alert-warning');
+          const res = await apiCall('borrarDatosGlobal', { passAdmin: pass });
+          ui.showAlert('alert-docente', res.msg, res.status ? 'alert-success' : 'alert-danger');
+          if(res.status) docenteApp.inicializarEditor();
+        }
+      }
+    };
+
+    // ==========================================
+    // ALUMNO APP
+    // ==========================================
+    const alumnoApp = {
+      login: async () => {
+        if(state.bloqueadoGlobal) return ui.showAlert('alert-login', 'Sistema en mantenimiento');
+        const nombre = document.getElementById('al-nombre').value.trim().replace(/\s+/g, ' ');
+        const nie = document.getElementById('al-nie').value.trim();
+        const pin = document.getElementById('al-pin').value.trim();
+        if(!nombre || !pin) return ui.showAlert('alert-login', 'Complete los campos');
+        if(!nie) return ui.showAlert('alert-login', 'Ingresa tu NIE — es obligatorio para registrar tu nota.');
+
+        const palabras = nombre.split(' ').filter(Boolean);
+        if(palabras.length < 3) return ui.showAlert('alert-login', 'Escribe tu nombre completo en MAYÚSCULAS y sin tildes (nombre y apellidos). Ej: JOSE EMERSON CASTRO PEREZ');
+
+        const btn = document.getElementById('btn-login-al'); btn.textContent = 'Cargando...'; btn.disabled = true;
+        const res = await apiCall('verificarPinAlumno', { pin, nombre, nie });
+        btn.textContent = 'Iniciar Examen'; btn.disabled = false;
+
+        if(res.error === "SISTEMA_CAIDO") return admin.verificarEstadoRealtime();
+        if(res.status) {
+          state.alumnoActivo = {
+            nombre, nie, pin, materia: res.materia, examen: res.examen, materiaPin: res.materiaPin || '',
+            grado: res.grado || '', seccion: res.seccion || '', tipoMateria: res.tipoMateria || 'basica',
+            especialidad: res.especialidad || '', actividadNota: res.actividadNota || 'a3',
+            escala: res.escala || '0-10', periodo: res.periodo || '1', docente: res.docente || ''
+          };
+          document.getElementById('examen-titulo').textContent = res.materia;
+          document.getElementById('examen-alumno-nombre').textContent = nombre;
+          ui.showView('view-examen');
+          alumnoApp.renderizarExamen();
+          alumnoApp.iniciarSyncOffline();
+          alumnoApp.antiCheat.iniciar();
+        } else { ui.showAlert('alert-login', res.error || 'Error de conexión'); }
+      },
+
+      renderizarExamen: () => {
+        const container = document.getElementById('area-preguntas');
+        container.innerHTML = '';
+        const guardadas = JSON.parse(localStorage.getItem(`exam_${state.alumnoActivo.pin}_${state.alumnoActivo.nombre}`)) || {};
+        state.respuestasAlumno = guardadas;
+
+        state.alumnoActivo.examen.forEach((preg, index) => {
+          const tipo = preg.tipo || 'unica';
+          let cuerpo = '';
+          if(tipo === 'corta') {
+            const val = guardadas[index] || '';
+            cuerpo = `<textarea class="form-control" rows="2" placeholder="Escribe tu respuesta" onchange="alumnoApp.guardar(${index}, this.value)">${val}</textarea>`;
+          } else if(tipo === 'multiple') {
+            const seleccion = Array.isArray(guardadas[index]) ? guardadas[index] : [];
+            cuerpo = (preg.opciones || []).map((o, oi) => {
+              if(!o) return '';
+              const checked = seleccion.includes(oi) ? 'checked' : '';
+              return `<label style="display:block; margin-bottom:8px;"><input type="checkbox" value="${oi}" ${checked} onchange="alumnoApp.guardarMultiple(${index}, ${oi}, this.checked)"> ${o}</label>`;
+            }).join('');
+          } else {
+            const seleccion = guardadas[index];
+            cuerpo = (preg.opciones || []).map((o, oi) => {
+              if(!o) return '';
+              const checked = Number(seleccion) === oi ? 'checked' : '';
+              return `<label style="display:block; margin-bottom:8px;"><input type="radio" name="p_${index}" value="${oi}" ${checked} onchange="alumnoApp.guardar(${index}, ${oi})"> ${o}</label>`;
+            }).join('');
+          }
+          container.innerHTML += `<div class="question-box"><p style="font-weight:600; margin-bottom:10px;">${index+1}. ${preg.pregunta}</p>${cuerpo}</div>`;
+        });
+      },
+      guardar: (i, v) => {
+        state.respuestasAlumno[i] = v;
+        localStorage.setItem(`exam_${state.alumnoActivo.pin}_${state.alumnoActivo.nombre}`, JSON.stringify(state.respuestasAlumno));
+      },
+      guardarMultiple: (i, oi, checked) => {
+        let arr = Array.isArray(state.respuestasAlumno[i]) ? state.respuestasAlumno[i] : [];
+        if(checked) { if(!arr.includes(oi)) arr.push(oi); } else { arr = arr.filter(x => x !== oi); }
+        state.respuestasAlumno[i] = arr;
+        localStorage.setItem(`exam_${state.alumnoActivo.pin}_${state.alumnoActivo.nombre}`, JSON.stringify(state.respuestasAlumno));
+      },
+
+      enviarExamen: async () => {
+        const paquete = {
+          alumno: state.alumnoActivo.nombre, nie: state.alumnoActivo.nie, materiaPin: state.alumnoActivo.materiaPin,
+          materia: state.alumnoActivo.materia, examenOriginal: state.alumnoActivo.examen, respuestas: state.respuestasAlumno
+        };
+        if(navigator.onLine) {
+          const res = await apiCall('guardarRespuestasServidor', { paquete });
+          if(res.error === "SISTEMA_CAIDO") return admin.verificarEstadoRealtime();
+          if(res.status) {
+            alumnoApp.antiCheat.detener();
+            const notaMsg = res.notaSincronizada ? '<p style="color:var(--success); font-size:13px;">✓ Tu nota ya fue registrada en tu libreta de calificaciones.</p>' : '';
+            document.getElementById('examen-contenedor-principal').innerHTML = `<div style="text-align:center; padding: 40px 0;"><h1>✅</h1><h2>Enviado!</h2><p>Puntaje: <b>${res.puntaje}</b></p>${notaMsg}<button class="btn btn-small" onclick="ui.logout()">Salir</button></div>`;
+            localStorage.clear();
+          } else { alert(res.error || "Error al enviar"); }
+        } else {
+          localStorage.setItem('sync_queue', JSON.stringify(paquete));
+          alert("Sin conexión. Guardado en el dispositivo. Se enviará al reconectar.");
+        }
+      },
+
+      iniciarSyncOffline: () => {
+        const statusEl = document.getElementById('sync-status');
+        window.addEventListener('offline', () => { statusEl.innerHTML = '⚠️ Sin internet. Sigue respondiendo.'; statusEl.style.display = 'block'; });
+        window.addEventListener('online', () => {
+          statusEl.style.display = 'none';
+          const queue = localStorage.getItem('sync_queue');
+          if(queue) alumnoApp.enviarExamen();
+        });
+      },
+
+      antiCheat: {
+        activo: false,
+        bloqueadoLocal: false,
+        enTransito: false,
+        iniciar: () => {
+          const ac = alumnoApp.antiCheat;
+          if(ac.activo) return;
+          ac.activo = true;
+          ac.bloqueadoLocal = false;
+          document.addEventListener('visibilitychange', ac.onCambio);
+        },
+        detener: () => {
+          const ac = alumnoApp.antiCheat;
+          ac.activo = false;
+          document.removeEventListener('visibilitychange', ac.onCambio);
+        },
+        onCambio: async () => {
+          const ac = alumnoApp.antiCheat;
+          if(!ac.activo) return;
+          if(document.visibilityState === 'hidden') {
+            if(ac.enTransito || ac.bloqueadoLocal) return;
+            ac.enTransito = true;
+            const res = await apiCall('registrarAdvertencia', { nombre: state.alumnoActivo.nombre, pin: state.alumnoActivo.materiaPin || state.alumnoActivo.pin });
+            if(res.status && res.bloqueado) {
+              ac.bloqueadoLocal = true;
+              ac.bloquearExamen();
+            } else {
+              document.getElementById('warning-overlay').style.display = 'flex';
+            }
+          } else if(document.visibilityState === 'visible') {
+            setTimeout(() => { ac.enTransito = false; }, 400);
+          }
+        },
+        bloquearExamen: () => {
+          alumnoApp.antiCheat.detener();
+          document.getElementById('warning-overlay').style.display = 'none';
+          document.getElementById('blocked-overlay').style.display = 'flex';
+        },
+        reintentarConPin: async () => {
+          const pin = document.getElementById('blocked-pin-input').value.trim();
+          const errEl = document.getElementById('blocked-error');
+          if(!pin) { errEl.textContent = 'Ingresa el PIN especial.'; errEl.style.display = 'block'; return; }
+          const res = await apiCall('verificarPinAlumno', { pin, nombre: state.alumnoActivo.nombre, nie: state.alumnoActivo.nie || '' });
+          if(res.status) {
+            state.alumnoActivo = Object.assign({}, state.alumnoActivo, {
+              pin, materia: res.materia, examen: res.examen, materiaPin: res.materiaPin || state.alumnoActivo.materiaPin,
+              grado: res.grado || '', seccion: res.seccion || '', tipoMateria: res.tipoMateria || 'basica',
+              especialidad: res.especialidad || '', actividadNota: res.actividadNota || 'a3',
+              escala: res.escala || '0-10', periodo: res.periodo || '1', docente: res.docente || ''
+            });
+            document.getElementById('blocked-overlay').style.display = 'none';
+            document.getElementById('blocked-pin-input').value = '';
+            errEl.style.display = 'none';
+            alumnoApp.antiCheat.bloqueadoLocal = false;
+            alumnoApp.antiCheat.iniciar();
+          } else {
+            errEl.textContent = res.error || 'PIN incorrecto.';
+            errEl.style.display = 'block';
+          }
+        }
+      }
+    };
+  </script>
+</body>
+</html>
